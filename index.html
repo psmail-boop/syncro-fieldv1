@@ -1,0 +1,1173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1.0,viewport-fit=cover"/>
+<meta name="apple-mobile-web-app-capable" content="yes"/>
+<meta name="apple-mobile-web-app-status-bar-style" content="default"/>
+<meta name="theme-color" content="#EAECFF"/>
+<title>Syncro Field</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700;800&display=swap" rel="stylesheet"/>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{width:100%;height:100%;overflow:hidden;background:#EAECFF;font-family:'Poppins',system-ui,sans-serif;color:#2B3299;-webkit-font-smoothing:antialiased}
+:root{
+  --pr:#6B8FFF;--pr2:#48C8F0;
+  --pr-l:#EEF1FF;--pr-glow:rgba(107,143,255,0.30);
+  --bg:#EAECFF;--surf:#FFFFFF;--surf2:#F3F5FF;--surf3:#EAEEFF;
+  --tx:#2B3299;--tx2:#8B98CC;--tx3:#B8C2E0;
+  --bd:rgba(107,143,255,0.13);--bd2:rgba(107,143,255,0.22);
+  --grn:#10B981;--ylw:#F59E0B;--red:#EF4444;
+  --sh:0 8px 28px rgba(80,100,255,0.11);
+  --sh-lg:0 20px 50px rgba(80,100,255,0.18);
+  --grad:linear-gradient(135deg,#6B8FFF 0%,#48C8F0 100%)
+}
+
+/* ── Shared ─────────────────────────────────────────────────── */
+.screen{position:fixed;inset:0;display:flex;flex-direction:column;background:var(--bg);overflow:hidden;z-index:1}
+.screen.hidden{display:none!important}
+.scroll{overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{display:none}
+
+.inp{width:100%;padding:14px 16px;background:#fff;border:1.5px solid var(--bd);border-radius:14px;color:var(--tx);font-size:14px;font-family:inherit;font-weight:500;outline:none;transition:border-color .2s,box-shadow .2s;-webkit-appearance:none;appearance:none;box-shadow:0 2px 8px rgba(80,100,255,0.06)}
+.inp:focus{border-color:var(--pr);box-shadow:0 0 0 4px rgba(107,143,255,0.14),0 2px 8px rgba(80,100,255,0.06)}
+.inp::placeholder{color:var(--tx3);font-weight:400}
+select.inp{cursor:pointer;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6' viewBox='0 0 10 6'%3E%3Cpath fill='%238B98CC' d='M0 0l5 6 5-6z'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 14px center;padding-right:38px}
+select.inp option{background:#fff;color:#2B3299}
+textarea.inp{resize:none;line-height:1.6}
+
+.btn{width:100%;padding:15px;background:var(--grad);border:none;border-radius:50px;color:#fff;font-size:15px;font-weight:700;font-family:inherit;cursor:pointer;transition:opacity .15s,transform .1s,box-shadow .15s;box-shadow:0 6px 22px var(--pr-glow)}
+.btn:active{opacity:.88;transform:scale(.983);box-shadow:0 2px 10px var(--pr-glow)}
+.btn:disabled{opacity:.45;cursor:not-allowed;transform:none}
+.btn-ghost{background:#fff;color:var(--tx2);box-shadow:var(--sh);border:none}
+.btn-ghost:active{background:var(--surf2)}
+.btn-danger{background:#FEE2E2;color:#DC2626;border:none;box-shadow:none}
+.btn-danger:active{background:#FECACA}
+
+.err{color:var(--red);font-size:12px;min-height:18px;padding:3px 0;font-weight:600}
+.lbl{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:7px}
+.fgrp{margin-bottom:16px}
+.row2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.divider{height:1px;background:var(--bd);margin:12px 0}
+
+/* ── Background orbs (decorative) ───────────────────────────── */
+.orb{position:fixed;border-radius:50%;pointer-events:none;z-index:0}
+.orb-1{width:220px;height:220px;top:-70px;left:-70px;background:radial-gradient(circle at 38% 32%,rgba(200,185,255,0.75) 0%,rgba(185,165,255,0.38) 38%,rgba(210,230,255,0.15) 65%,transparent 100%);filter:blur(6px)}
+.orb-2{width:110px;height:110px;top:80px;right:-25px;background:radial-gradient(circle at 36% 32%,rgba(145,225,255,0.72) 0%,rgba(125,205,255,0.32) 50%,transparent 100%);filter:blur(3px)}
+.orb-3{width:85px;height:85px;bottom:160px;left:16px;background:radial-gradient(circle at 38% 36%,rgba(145,235,205,0.65) 0%,rgba(115,215,175,0.25) 55%,transparent 100%);filter:blur(3px)}
+.orb-4{width:170px;height:170px;bottom:60px;right:-55px;background:radial-gradient(circle at 40% 30%,rgba(185,205,255,0.58) 0%,rgba(165,185,255,0.22) 50%,transparent 100%);filter:blur(8px)}
+.orb-5{width:60px;height:60px;top:45%;left:60%;background:radial-gradient(circle,rgba(255,185,215,0.5) 0%,transparent 70%);filter:blur(4px)}
+
+/* ── Auth screens ────────────────────────────────────────────── */
+#s-login,#s-register{background:var(--bg)}
+.auth-bar{height:3px;background:var(--grad);flex-shrink:0}
+.auth-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px 24px;overflow-y:auto}
+.auth-logo{width:76px;height:76px;background:var(--grad);border-radius:24px;display:flex;align-items:center;justify-content:center;font-size:36px;font-weight:800;color:#fff;margin-bottom:22px;box-shadow:0 8px 28px var(--pr-glow);flex-shrink:0}
+.auth-title{font-size:26px;font-weight:800;margin-bottom:6px;color:var(--tx);letter-spacing:-.3px}
+.auth-sub{font-size:13.5px;color:var(--tx2);margin-bottom:30px;text-align:center;line-height:1.65;max-width:280px;font-weight:400}
+.auth-form{width:100%;max-width:360px}
+.auth-switch{text-align:center;margin-top:20px;font-size:13.5px;color:var(--tx2);font-weight:400}
+.auth-switch a{color:var(--pr);cursor:pointer;text-decoration:none;font-weight:700}
+.auth-divider{display:flex;align-items:center;gap:12px;margin:20px 0;color:var(--tx3);font-size:12px}
+.auth-divider::before,.auth-divider::after{content:'';flex:1;height:1px;background:var(--bd2)}
+
+/* ── Pending ─────────────────────────────────────────────────── */
+#s-pending{background:var(--bg)}
+.pending-wrap{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:40px 28px;text-align:center;gap:18px}
+.pending-blob{width:96px;height:96px;border-radius:50%;background:var(--pr-l);display:flex;align-items:center;justify-content:center;font-size:42px}
+.pending-title{font-size:22px;font-weight:800;color:var(--tx)}
+.pending-sub{font-size:13.5px;color:var(--tx2);line-height:1.7;max-width:290px;font-weight:400}
+
+/* ── App header ──────────────────────────────────────────────── */
+.app-header{background:var(--grad);flex-shrink:0;position:relative;overflow:hidden}
+.app-header::before{content:'';position:absolute;top:-50px;right:-30px;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,0.12);pointer-events:none}
+.app-header::after{content:'';position:absolute;bottom:-40px;left:-20px;width:110px;height:110px;border-radius:50%;background:rgba(255,255,255,0.08);pointer-events:none}
+.hdr-logo,.hdr-info,.icon-btn{display:none!important}
+.hdr-content{display:flex;align-items:center;gap:12px;padding:18px 20px;padding-top:calc(18px + env(safe-area-inset-top));position:relative;z-index:1}
+.hdr-text{flex:1;min-width:0}
+.hdr-greeting{font-size:18px;font-weight:800;color:#fff;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hdr-sub{font-size:12px;color:rgba(255,255,255,0.72);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-weight:400}
+.hdr-refresh{width:38px;height:38px;border-radius:50%;background:rgba(255,255,255,0.2);border:1.5px solid rgba(255,255,255,0.35);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;cursor:pointer;flex-shrink:0;transition:background .15s}
+.hdr-refresh:active{background:rgba(255,255,255,0.38)}
+.hdr-avt{width:40px;height:40px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:800;color:#fff;border:2px solid rgba(255,255,255,0.45);flex-shrink:0;cursor:pointer;transition:opacity .15s}
+.hdr-avt:active{opacity:.72}
+
+/* ── Filter tabs ─────────────────────────────────────────────── */
+.filter-wrap{background:var(--bg);flex-shrink:0;padding-top:4px}
+.filter-bar{display:flex;gap:7px;padding:10px 16px 12px;overflow-x:auto;scrollbar-width:none}
+.filter-bar::-webkit-scrollbar{display:none}
+.ftab{padding:8px 18px;border-radius:50px;font-size:12.5px;font-weight:600;font-family:inherit;background:#fff;border:none;color:var(--tx2);cursor:pointer;white-space:nowrap;flex-shrink:0;transition:all .18s;box-shadow:0 2px 10px rgba(80,100,255,0.08)}
+.ftab.active{background:var(--grad);color:#fff;box-shadow:0 4px 16px var(--pr-glow)}
+.ftab:active:not(.active){opacity:.75}
+
+/* ── Task list ───────────────────────────────────────────────── */
+.task-list{flex:1;padding:6px 16px 180px;display:flex;flex-direction:column;gap:11px}
+.task-card{background:#fff;border-radius:20px;padding:16px;cursor:pointer;box-shadow:var(--sh);transition:transform .12s,box-shadow .12s;animation:fadeUp .25s ease both}
+.task-card:active{transform:scale(.982);box-shadow:0 3px 12px rgba(80,100,255,0.08)}
+@keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+.card-top{display:flex;gap:10px;margin-bottom:9px;align-items:flex-start}
+.card-title{font-size:14px;font-weight:700;line-height:1.45;flex:1;color:var(--tx)}
+.badge{padding:4px 12px;border-radius:50px;font-size:11px;font-weight:700;white-space:nowrap;flex-shrink:0}
+.card-meta{display:flex;align-items:center;gap:7px;font-size:11.5px;color:var(--tx2);flex-wrap:wrap}
+.chip{background:var(--surf2);padding:3px 10px;border-radius:50px;font-size:11px;color:var(--tx2);font-weight:500}
+.chip-gray{font-size:11px;color:var(--tx3);font-weight:400}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--tx3);flex-shrink:0}
+.sync-dot.ok{background:var(--grn)}
+.tag{padding:2px 8px;border-radius:8px;font-size:10px;font-weight:700;text-transform:uppercase;letter-spacing:.3px}
+.tag-cr{background:var(--pr-l);color:var(--pr)}
+.tag-pri{background:#FFF7ED;color:#EA580C}
+.empty{display:flex;flex-direction:column;align-items:center;padding:60px 24px;gap:14px;text-align:center}
+.empty-ico{font-size:52px;opacity:.4}
+.empty-txt{font-size:14.5px;line-height:1.65;font-weight:500;color:var(--tx2)}
+
+/* ── FAB ─────────────────────────────────────────────────────── */
+.fab{position:fixed;bottom:calc(92px + env(safe-area-inset-bottom));right:18px;width:54px;height:54px;background:var(--grad);border:none;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:28px;color:#fff;cursor:pointer;box-shadow:0 6px 24px var(--pr-glow);z-index:100;transition:transform .15s,box-shadow .15s}
+.fab:active{transform:scale(.88);box-shadow:0 2px 10px var(--pr-glow)}
+
+/* ── Bottom nav — floating white pill ────────────────────────── */
+.bottom-nav{
+  position:fixed;bottom:calc(14px + env(safe-area-inset-bottom));
+  left:50%;transform:translateX(-50%);
+  width:calc(100% - 28px);max-width:430px;
+  display:flex;background:#fff;border-radius:24px;padding:6px;
+  box-shadow:0 10px 40px rgba(80,100,255,0.17);z-index:100;flex-shrink:0
+}
+.nav-btn{flex:1;padding:9px 8px 8px;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;color:var(--tx3);transition:all .18s;border-radius:18px;font-family:inherit}
+.nav-btn.active{background:var(--pr-l);color:var(--pr)}
+.nav-btn:active:not(.active){opacity:.55}
+.nav-icon{width:22px;height:22px;display:flex;align-items:center;justify-content:center}
+.nav-lbl{font-size:10px;font-weight:700;letter-spacing:.3px}
+
+/* ── Profile tab ─────────────────────────────────────────────── */
+.profile-hero{padding:36px 20px 26px;background:var(--grad);display:flex;flex-direction:column;align-items:center;gap:10px;position:relative;overflow:hidden}
+.profile-hero::before{content:'';position:absolute;top:-40px;right:-40px;width:150px;height:150px;border-radius:50%;background:rgba(255,255,255,0.12)}
+.profile-hero::after{content:'';position:absolute;bottom:-30px;left:-20px;width:100px;height:100px;border-radius:50%;background:rgba(255,255,255,0.08)}
+.profile-avatar{width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,0.25);display:flex;align-items:center;justify-content:center;font-size:30px;font-weight:800;color:#fff;border:2.5px solid rgba(255,255,255,0.5);position:relative;z-index:1}
+#prof-name{font-size:18px;font-weight:800;color:#fff;position:relative;z-index:1}
+#prof-email{font-size:12.5px;color:rgba(255,255,255,0.72);position:relative;z-index:1;font-weight:400}
+.profile-content{padding:8px 16px 180px;background:var(--bg)}
+.section-title{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:8px;margin-top:22px}
+.info-card{background:#fff;border-radius:18px;overflow:hidden;box-shadow:var(--sh);margin-bottom:4px}
+.info-row{display:flex;align-items:center;justify-content:space-between;padding:13px 16px;border-bottom:1px solid var(--bd)}
+.info-row:last-child{border-bottom:none}
+.info-label{font-size:13px;color:var(--tx2);font-weight:500}
+.info-val{font-size:13px;font-weight:700;color:var(--tx);text-align:right;max-width:60%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.form-card{background:#fff;border-radius:18px;padding:18px;box-shadow:var(--sh)}
+.form-card-title{font-size:14px;font-weight:700;color:var(--tx);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+.tfs-badge{background:var(--pr-l);color:var(--pr);padding:2px 9px;border-radius:50px;font-size:11px;font-weight:700}
+.tfs-card{background:#fff;border-radius:18px;padding:18px;margin-bottom:12px;box-shadow:var(--sh)}
+.tfs-title{font-size:14px;font-weight:700;color:var(--tx);margin-bottom:14px;display:flex;align-items:center;gap:8px}
+
+/* ── Modals ──────────────────────────────────────────────────── */
+.overlay{position:fixed;inset:0;background:rgba(80,100,200,0.18);display:flex;align-items:flex-end;z-index:200;backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);animation:fadeIn .18s}
+.overlay.hidden{display:none}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.modal{width:100%;background:#fff;border-radius:28px 28px 0 0;padding:20px 20px calc(28px + env(safe-area-inset-bottom));animation:slideUp .3s cubic-bezier(.16,1,.3,1);max-height:92vh;box-shadow:0 -6px 40px rgba(80,100,255,0.14)}
+.modal.scroll{overflow-y:auto}
+.modal::-webkit-scrollbar{display:none}
+@keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+.handle{width:40px;height:4px;background:#E0E4FF;border-radius:2px;margin:0 auto 20px}
+.modal-title{font-size:20px;font-weight:800;margin-bottom:18px;color:var(--tx)}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:13px 14px;background:var(--surf2);border-radius:14px;cursor:pointer;margin-bottom:8px;border:1px solid var(--bd)}
+.toggle-lbl{font-size:14px;font-weight:600;color:var(--tx)}
+.toggle-sub{font-size:11.5px;color:var(--tx2);margin-top:2px}
+.tog{width:44px;height:26px;border-radius:13px;background:#D9DCEF;position:relative;transition:background .2s;flex-shrink:0}
+.tog.on{background:var(--pr)}
+.tog::after{content:'';position:absolute;top:3px;left:3px;width:20px;height:20px;border-radius:50%;background:#fff;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.15)}
+.tog.on::after{transform:translateX(18px)}
+.mbtns{display:flex;gap:10px;margin-top:18px}
+.btn-out{flex:1;padding:14px;background:#fff;border:1.5px solid var(--bd2);border-radius:50px;color:var(--tx2);font-size:14px;font-weight:700;font-family:inherit;cursor:pointer;transition:background .15s}
+.btn-out:active{background:var(--surf2)}
+
+/* ── Status grid ─────────────────────────────────────────────── */
+.status-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.s-opt{padding:13px 10px;border-radius:14px;border:1.5px solid var(--bd);background:var(--surf2);color:var(--tx2);font-size:13px;font-weight:600;font-family:inherit;cursor:pointer;text-align:center;transition:all .13s}
+.s-opt:active{transform:scale(.955)}
+.s-opt.cur{border-width:2px}
+.hours-box{background:var(--surf2);border-radius:16px;padding:16px;margin-top:10px;border:1px solid var(--bd)}
+.hours-ttl{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.6px;margin-bottom:12px}
+
+/* ── Loading / Toast ─────────────────────────────────────────── */
+.loading{display:flex;align-items:center;justify-content:center;padding:64px}
+.spinner{width:28px;height:28px;border:3px solid #E0E4FF;border-top-color:var(--pr);border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.toast{position:fixed;top:calc(16px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);background:var(--tx);padding:11px 22px;border-radius:50px;font-size:13px;font-weight:600;color:#fff;z-index:9999;white-space:nowrap;animation:toastIn .22s;pointer-events:none;box-shadow:0 6px 20px rgba(80,100,255,0.22)}
+@keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(-8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+
+/* ── Sub-task rows (add modal) ───────────────────────────────── */
+.sub-rows{display:flex;flex-direction:column;gap:10px;margin-top:8px}
+.sub-row{display:flex;flex-direction:column;background:var(--surf2);border-radius:16px;padding:12px;border:1.5px solid var(--bd)}
+.sub-row textarea.inp{resize:none;min-height:72px;line-height:1.55;border-radius:10px;box-shadow:none}
+.sub-row-foot{display:flex;gap:8px;align-items:center;margin-top:8px}
+.sub-hrs{flex:1!important}
+.sub-del{width:36px;height:36px;border-radius:50%;background:#FEE2E2;border:none;color:#DC2626;font-size:18px;line-height:1;cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:background .15s}
+.sub-del:active{background:#FECACA}
+.btn-dashed{width:100%;padding:11px;border:1.5px dashed var(--bd2);border-radius:14px;background:transparent;color:var(--pr);font-size:13px;font-weight:700;font-family:inherit;cursor:pointer;margin-top:8px;transition:background .15s}
+.btn-dashed:active{background:var(--pr-l)}
+
+/* ── Sub-task check items (status modal) ─────────────────────── */
+.sub-checks{display:flex;flex-direction:column;gap:8px;margin-bottom:16px}
+.sub-check{background:var(--surf2);border-radius:14px;padding:12px 14px;border:1.5px solid var(--bd);transition:border-color .15s,background .15s}
+.sub-check.done{border-color:var(--grn);background:#F0FDF4}
+.sub-check-hdr{display:flex;align-items:center;gap:10px;cursor:pointer;-webkit-user-select:none;user-select:none}
+.sub-cb{width:22px;height:22px;border-radius:50%;border:2px solid var(--tx3);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:800;color:transparent;transition:all .15s}
+.sub-check.done .sub-cb{background:var(--grn);border-color:var(--grn);color:#fff}
+.sub-check-title{flex:1;font-size:13px;font-weight:600;color:var(--tx);line-height:1.45}
+.sub-est{font-size:11px;color:var(--tx3);white-space:nowrap}
+.sub-hrs-inp{margin-top:10px}
+
+/* ── Dashboard ───────────────────────────────────────────────── */
+.dash-section{padding:6px 16px 180px}
+.dash-card{background:#fff;border-radius:20px;padding:18px;margin-bottom:12px;box-shadow:var(--sh)}
+.dash-card-title{font-size:11px;font-weight:700;color:var(--tx2);text-transform:uppercase;letter-spacing:.7px;margin-bottom:16px}
+.dash-stat-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px}
+.dash-stat{background:#fff;border-radius:18px;padding:16px 10px;text-align:center;box-shadow:var(--sh)}
+.dash-stat-num{font-size:24px;font-weight:800;color:var(--tx);line-height:1}
+.dash-stat-lbl{font-size:10px;color:var(--tx2);margin-top:5px;font-weight:600;text-transform:uppercase;letter-spacing:.3px}
+.dash-co-row{display:flex;align-items:center;gap:8px;margin-bottom:7px}
+.dash-co-name{font-size:13px;font-weight:600;flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--tx)}
+.dash-co-count{font-size:12px;color:var(--tx2);flex-shrink:0;font-weight:500}
+.dash-bar-wrap{height:7px;background:var(--surf3);border-radius:50px;overflow:hidden;margin-bottom:14px}
+.dash-bar{height:100%;background:var(--grad);border-radius:50px;transition:width .7s cubic-bezier(.16,1,.3,1)}
+.dash-day-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
+.dash-day-lbl{font-size:11px;font-weight:700;color:var(--tx2);width:30px;flex-shrink:0;text-align:center}
+.dash-day-date{font-size:9.5px;color:var(--tx3)}
+.dash-day-bar-wrap{flex:1}
+.dash-day-hrs{font-size:12px;font-weight:700;color:var(--tx);width:32px;text-align:right;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<!-- Decorative floating orbs (always visible behind screens) -->
+<div class="orb orb-1"></div>
+<div class="orb orb-2"></div>
+<div class="orb orb-3"></div>
+<div class="orb orb-4"></div>
+<div class="orb orb-5"></div>
+
+<!-- ── LOGIN ────────────────────────────────────────────────────── -->
+<div class="screen" id="s-login">
+  <div class="auth-bar"></div>
+  <div class="auth-wrap scroll">
+    <div class="auth-logo">S</div>
+    <div class="auth-title">Welcome back</div>
+    <div class="auth-sub">Sign in to Syncro Field to manage your implementation tasks</div>
+    <div class="auth-form">
+      <div class="fgrp">
+        <div class="lbl">Email address</div>
+        <input class="inp" id="l-email" type="email" placeholder="your@email.com" autocomplete="email"/>
+      </div>
+      <div class="fgrp">
+        <div class="lbl">Password</div>
+        <input class="inp" id="l-pass" type="password" placeholder="Enter your password" autocomplete="current-password"/>
+      </div>
+      <div class="err" id="l-err"></div>
+      <button class="btn" id="l-btn" onclick="doLogin()">Sign In</button>
+      <div class="auth-divider">or</div>
+      <div class="auth-switch">New user? <a onclick="showScreen('s-register')">Create an account</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── REGISTER ──────────────────────────────────────────────────── -->
+<div class="screen hidden" id="s-register">
+  <div class="auth-bar"></div>
+  <div class="auth-wrap scroll">
+    <div class="auth-logo">S</div>
+    <div class="auth-title">Create account</div>
+    <div class="auth-sub">Join your implementation team on Syncro Field</div>
+    <div class="auth-form">
+      <div class="fgrp">
+        <div class="lbl">Full Name</div>
+        <input class="inp" id="r-name" type="text" placeholder="Your full name" autocomplete="name"/>
+      </div>
+      <div class="fgrp">
+        <div class="lbl">Email address</div>
+        <input class="inp" id="r-email" type="email" placeholder="your@email.com" autocomplete="email"/>
+      </div>
+      <div class="fgrp">
+        <div class="lbl">Password</div>
+        <input class="inp" id="r-pass" type="password" placeholder="Create a password (min 6 chars)" autocomplete="new-password"/>
+      </div>
+      <div class="fgrp" id="r-team-grp">
+        <div class="lbl">Team</div>
+        <select class="inp" id="r-team"></select>
+      </div>
+      <div class="err" id="r-err"></div>
+      <button class="btn" id="r-btn" onclick="doRegister()">Create Account</button>
+      <div class="auth-divider">or</div>
+      <div class="auth-switch">Already have an account? <a onclick="showScreen('s-login')">Sign in</a></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── PENDING APPROVAL ──────────────────────────────────────────── -->
+<div class="screen hidden" id="s-pending">
+  <div class="auth-bar"></div>
+  <div class="pending-wrap">
+    <div class="pending-blob">⏳</div>
+    <div class="pending-title">Awaiting Approval</div>
+    <div class="pending-sub">Your account is waiting for admin approval. Contact your team admin to get approved.</div>
+    <button class="btn" style="max-width:290px;margin-top:8px" onclick="checkApproval()">Check Status</button>
+    <button class="btn btn-ghost" style="max-width:290px" onclick="doLogout()">Sign Out</button>
+  </div>
+</div>
+
+<!-- ── MAIN APP ──────────────────────────────────────────────────── -->
+<div class="screen hidden" id="s-app">
+
+  <!-- Gradient header -->
+  <div class="app-header">
+    <div class="hdr-logo">S</div>
+    <div class="hdr-info"><div id="hdr-name"></div><div id="hdr-team"></div></div>
+    <div class="icon-btn" onclick="loadTasks()">↻</div>
+    <div class="hdr-content">
+      <div class="hdr-text">
+        <div class="hdr-greeting">Hi, <span id="hdr-name-vis">there</span></div>
+        <div class="hdr-sub" id="hdr-team-vis">Implementation Team</div>
+      </div>
+      <button class="hdr-refresh" onclick="loadTasks()" title="Refresh">
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M21 12a9 9 0 1 1-2.47-6.22"/>
+          <polyline points="21 3 21 9 15 9"/>
+        </svg>
+      </button>
+      <div class="hdr-avt" id="hdr-avt" onclick="switchTab('profile')">S</div>
+    </div>
+  </div>
+
+  <!-- Tasks tab -->
+  <div id="tab-tasks" style="display:flex;flex-direction:column;flex:1;overflow:hidden;background:var(--bg)">
+    <div class="filter-wrap">
+      <div class="filter-bar">
+        <div class="ftab active" onclick="setFilter('all',this)">All</div>
+        <div class="ftab" onclick="setFilter('Pending',this)">Pending</div>
+        <div class="ftab" onclick="setFilter('In Progress',this)">In Progress</div>
+        <div class="ftab" onclick="setFilter('On Hold',this)">On Hold</div>
+        <div class="ftab" onclick="setFilter('Completed',this)">Completed</div>
+      </div>
+    </div>
+    <div class="task-list scroll" id="task-list">
+      <div class="loading"><div class="spinner"></div></div>
+    </div>
+    <button class="fab" onclick="openAdd()">+</button>
+  </div>
+
+  <!-- Dashboard tab -->
+  <div id="tab-dashboard" class="scroll" style="display:none;flex:1;overflow-y:auto;background:var(--bg)">
+    <div class="dash-section">
+      <div class="section-title" style="margin-top:16px">Overview</div>
+      <div class="dash-stat-row" id="dash-stats">
+        <div class="dash-stat"><div class="dash-stat-num">—</div><div class="dash-stat-lbl">Total</div></div>
+        <div class="dash-stat"><div class="dash-stat-num" style="color:var(--grn)">—</div><div class="dash-stat-lbl">Done</div></div>
+        <div class="dash-stat"><div class="dash-stat-num" style="color:var(--pr)">—</div><div class="dash-stat-lbl">Active</div></div>
+      </div>
+      <div class="section-title">By Company</div>
+      <div id="dash-companies"><div class="dash-card" style="color:var(--tx2);text-align:center;font-size:14px;padding:24px">Loading…</div></div>
+      <div class="section-title">Daily Hours — Last 7 Days</div>
+      <div id="dash-hours"><div class="dash-card" style="color:var(--tx2);text-align:center;font-size:14px;padding:24px">Loading…</div></div>
+    </div>
+  </div>
+
+  <!-- Profile tab -->
+  <div id="tab-profile" class="scroll" style="display:none;flex:1;overflow-y:auto;background:var(--bg)">
+    <div class="profile-hero">
+      <div class="profile-avatar" id="prof-avatar"></div>
+      <div id="prof-name"></div>
+      <div id="prof-email"></div>
+    </div>
+    <div class="profile-content">
+
+      <div class="section-title">Account Details</div>
+      <div class="info-card">
+        <div class="info-row"><span class="info-label">Team</span><span class="info-val" id="prof-team"></span></div>
+        <div class="info-row"><span class="info-label">Syncro ID</span><span class="info-val" id="prof-syncro"></span></div>
+      </div>
+
+      <div class="section-title">TFS / Azure DevOps</div>
+      <div class="form-card">
+        <div class="form-card-title">Work Item Integration <span class="tfs-badge">TFS</span></div>
+        <div class="fgrp" style="margin-bottom:0">
+          <div class="lbl">Personal Access Token (PAT)</div>
+          <input class="inp" id="tfs-pass" type="password" placeholder="Paste your TFS PAT here"/>
+          <div style="font-size:11px;color:var(--tx3);margin-top:6px;font-weight:400">
+            Get it from TFS → Profile → Security → Personal Access Tokens. Scope: Work Items (Read &amp; Write).
+          </div>
+        </div>
+        <div class="err" id="tfs-err" style="margin-top:6px"></div>
+        <button class="btn" id="tfs-save-btn" onclick="saveTFSCredentials()" style="margin-top:14px">Save PAT</button>
+      </div>
+
+      <div class="section-title">Security</div>
+      <div class="form-card">
+        <div class="form-card-title">Change Password</div>
+        <div class="fgrp">
+          <div class="lbl">Current Password</div>
+          <input class="inp" id="cp-old" type="password" placeholder="Enter current password"/>
+        </div>
+        <div class="fgrp" style="margin-bottom:0">
+          <div class="lbl">New Password</div>
+          <input class="inp" id="cp-new" type="password" placeholder="New password (min 6 chars)"/>
+        </div>
+        <div class="err" id="cp-err" style="margin-top:6px"></div>
+        <button class="btn" id="cp-btn" onclick="changePassword()" style="margin-top:14px">Change Password</button>
+      </div>
+
+      <div class="section-title" style="margin-top:22px"></div>
+      <button class="btn btn-danger" onclick="doLogout()" style="border-radius:50px;margin-bottom:16px">Sign Out</button>
+    </div>
+  </div>
+
+  <!-- Bottom nav — floating white pill -->
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="nav-tasks" onclick="switchTab('tasks')">
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="5" width="18" height="16" rx="3"/>
+          <path d="M7 9h10M7 13h7"/>
+        </svg>
+      </span>
+      <span class="nav-lbl">Tasks</span>
+    </button>
+    <button class="nav-btn" id="nav-dashboard" onclick="switchTab('dashboard')">
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="13" width="5" height="8" rx="1.5"/>
+          <rect x="9.5" y="8" width="5" height="13" rx="1.5"/>
+          <rect x="16" y="3" width="5" height="18" rx="1.5"/>
+        </svg>
+      </span>
+      <span class="nav-lbl">Dashboard</span>
+    </button>
+    <button class="nav-btn" id="nav-profile" onclick="switchTab('profile')">
+      <span class="nav-icon">
+        <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="8" r="4"/>
+          <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/>
+        </svg>
+      </span>
+      <span class="nav-lbl">Profile</span>
+    </button>
+  </div>
+
+</div>
+
+<!-- ── ADD TASK MODAL ────────────────────────────────────────────── -->
+<div class="overlay hidden" id="add-modal" onclick="bgClose('add-modal',event)">
+  <div class="modal scroll">
+    <div class="handle"></div>
+    <div class="modal-title">New Task</div>
+    <div class="fgrp"><div class="lbl">Title *</div><input class="inp" id="t-title" type="text" placeholder="Task title"/></div>
+    <div class="fgrp"><div class="lbl">Client / Company *</div><select class="inp" id="t-company"></select></div>
+    <div class="row2">
+      <div class="fgrp"><div class="lbl">Target Date *</div><input class="inp" id="t-date" type="date"/></div>
+      <div class="fgrp"><div class="lbl">Est. Hours</div><input class="inp" id="t-hours" type="number" min="0" step="0.5" placeholder="0.0"/></div>
+    </div>
+    <div class="fgrp"><div class="lbl">Description</div><textarea class="inp" id="t-desc" rows="3" placeholder="Details, requirements, notes…"></textarea></div>
+    <div class="divider" style="margin:14px 0 12px"></div>
+    <div class="lbl" style="margin-bottom:4px">Sub-tasks <span style="font-weight:400;text-transform:none;letter-spacing:0;color:var(--tx3)">(description required)</span></div>
+    <div class="sub-rows" id="sub-rows"></div>
+    <button class="btn-dashed" type="button" onclick="addSubRow()">+ Add Sub-task</button>
+    <div class="mbtns">
+      <button class="btn-out" onclick="closeModal('add-modal')">Cancel</button>
+      <button class="btn" style="flex:2" id="save-btn" onclick="saveTask()">Add Task</button>
+    </div>
+  </div>
+</div>
+
+<!-- ── STATUS MODAL ──────────────────────────────────────────────── -->
+<div class="overlay hidden" id="status-modal" onclick="bgClose('status-modal',event)">
+  <div class="modal scroll">
+    <div class="handle"></div>
+    <div class="modal-title" id="status-task-name">Update Status</div>
+    <div id="sub-checks-wrap" style="display:none">
+      <div class="lbl" style="margin-bottom:8px">Sub-tasks</div>
+      <div class="sub-checks" id="sub-checks"></div>
+    </div>
+    <div class="lbl" style="margin-bottom:10px">Select Status</div>
+    <div class="status-grid" id="status-grid"></div>
+    <div class="hours-box">
+      <div class="hours-ttl">Log Hours (optional)</div>
+      <div class="row2">
+        <div class="fgrp" style="margin-bottom:0"><div class="lbl">Hours Worked</div><input class="inp" id="h-hours" type="number" min="0" step="0.5" placeholder="0.0"/></div>
+        <div class="fgrp" style="margin-bottom:0"><div class="lbl">Date</div><input class="inp" id="h-date" type="date"/></div>
+      </div>
+      <div class="fgrp" style="margin-top:12px;margin-bottom:0"><div class="lbl">Note</div><input class="inp" id="h-note" type="text" placeholder="What did you work on?"/></div>
+    </div>
+    <div class="mbtns">
+      <button class="btn-out" onclick="closeModal('status-modal')">Cancel</button>
+      <button class="btn" style="flex:2" id="apply-btn" onclick="applyStatus()">Update</button>
+    </div>
+    <div style="margin-top:10px">
+      <button class="btn btn-danger" id="delete-btn" data-confirm="0" onclick="tapDelete()" style="border-radius:50px">Delete Task</button>
+    </div>
+  </div>
+</div>
+
+<script>
+const SUPA_URL = 'https://msqbhzvlfrosmtmbkpaq.supabase.co';
+const SUPA_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im1zcWJoenZsZnJvc210bWJrcGFxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzkzNTU3MjUsImV4cCI6MjA5NDkzMTcyNX0.rAOoUL1ggtfHafFLw7_QpCA1ZT_HFbfUxyD65JxRfGk';
+const sb = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+const STATUS_STYLE = {
+  'Pending':     {bg:'#FEF3C7', color:'#D97706', border:'#FDE68A'},
+  'In Progress': {bg:'#DBEAFE', color:'#2563EB', border:'#BFDBFE'},
+  'On Hold':     {bg:'#FEE2E2', color:'#DC2626', border:'#FECACA'},
+  'Completed':   {bg:'#D1FAE5', color:'#059669', border:'#A7F3D0'},
+  'Cancelled':   {bg:'#F3F4F6', color:'#6B7280', border:'#E5E7EB'},
+  'On UAT':      {bg:'#EDE9FE', color:'#7C3AED', border:'#DDD6FE'},
+  'Complete':    {bg:'#D1FAE5', color:'#059669', border:'#A7F3D0'},
+  'Hold':        {bg:'#FEE2E2', color:'#DC2626', border:'#FECACA'},
+  'Cancel':      {bg:'#F3F4F6', color:'#6B7280', border:'#E5E7EB'},
+};
+
+const HIDDEN_STATUSES = ['Code Review', 'Code Review Done', 'Hold', 'Send Implement', 'Send to Implement', 'Waiting for Client Response'];
+function visibleStatuses() {
+  const all = (sess.statuses?.length) ? sess.statuses : Object.keys(STATUS_STYLE).map(n=>({name:n}));
+  return all.filter(s => !HIDDEN_STATUSES.includes(s.name));
+}
+
+let sess=null, tasks=[], filter='all', selTaskId=null, selStatus=null, timer=null;
+let subRows=[], selSubtasks=[], deleteConfirmTimer=null;
+
+// ── Password hashing (Web Crypto SHA-256) ─────────────────────────────────────
+async function hashPwd(pwd) {
+  const data = new TextEncoder().encode('sf_v1_' + pwd);
+  const buf  = await crypto.subtle.digest('SHA-256', data);
+  return Array.from(new Uint8Array(buf)).map(b=>b.toString(16).padStart(2,'0')).join('');
+}
+
+// ── Init ──────────────────────────────────────────────────────────────────────
+(function(){
+  try {
+    const s = localStorage.getItem('sf_sess');
+    if (s) {
+      sess = JSON.parse(s);
+      if (!sess.isApproved) { showScreen('s-pending'); return; }
+      showApp();
+      loadImplConfig();
+      loadTasks();
+    }
+  } catch { localStorage.removeItem('sf_sess'); }
+})();
+
+// ── Screens ───────────────────────────────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s=>s.classList.add('hidden'));
+  document.getElementById(id).classList.remove('hidden');
+  if (id === 's-register') loadRegisterTeams();
+}
+function showApp() {
+  showScreen('s-app');
+  document.getElementById('hdr-name').textContent = sess.name;
+  document.getElementById('hdr-team').textContent = sess.teamName || sess.teamCode;
+  const initials = (sess.name||'?').split(' ').map(w=>w[0]).join('').toUpperCase().slice(0,2);
+  document.getElementById('prof-avatar').textContent = initials;
+  document.getElementById('prof-name').textContent   = sess.name;
+  document.getElementById('prof-email').textContent  = sess.email;
+  document.getElementById('prof-team').textContent   = sess.teamName || sess.teamCode;
+  document.getElementById('prof-syncro').textContent = sess.syncroUserId ? `#${sess.syncroUserId}` : 'Pending sync';
+  document.getElementById('tfs-pass').value = sess.tfsPassword || '';
+  clearInterval(timer);
+  timer = setInterval(loadTasks, 30000);
+  const firstName = (sess.name||'there').split(' ')[0];
+  const vis = document.getElementById('hdr-name-vis');
+  if (vis) vis.textContent = firstName;
+  const tv = document.getElementById('hdr-team-vis');
+  if (tv) tv.textContent = sess.teamName || sess.teamCode || 'Implementation Team';
+  const avt = document.getElementById('hdr-avt');
+  if (avt) avt.textContent = initials;
+}
+
+function switchTab(tab) {
+  document.getElementById('tab-tasks').style.display     = tab==='tasks'     ? 'flex'  : 'none';
+  document.getElementById('tab-dashboard').style.display = tab==='dashboard' ? 'block' : 'none';
+  document.getElementById('tab-profile').style.display   = tab==='profile'   ? 'block' : 'none';
+  document.getElementById('nav-tasks').classList.toggle('active',     tab==='tasks');
+  document.getElementById('nav-dashboard').classList.toggle('active', tab==='dashboard');
+  document.getElementById('nav-profile').classList.toggle('active',   tab==='profile');
+  document.querySelector('.fab').style.display = tab==='tasks' ? 'flex' : 'none';
+  if (tab==='dashboard') loadDashboard();
+}
+
+// ── Login ─────────────────────────────────────────────────────────────────────
+document.getElementById('l-pass').addEventListener('keydown', e=>{ if(e.key==='Enter') doLogin(); });
+async function doLogin() {
+  const email = document.getElementById('l-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('l-pass').value;
+  const errEl = document.getElementById('l-err');
+  const btn   = document.getElementById('l-btn');
+  errEl.textContent='';
+  if (!email || !pass) { errEl.textContent='Please enter email and password'; return; }
+  btn.disabled=true; btn.textContent='Signing in…';
+  try {
+    const { data: user } = await sb.from('impl_users').select('*').eq('email', email).maybeSingle();
+    if (!user) {
+      errEl.textContent='Account not found. Your admin needs to restart the Syncro server once to sync accounts.';
+      return;
+    }
+    if (!user.is_approved) { showScreen('s-pending'); return; }
+    if (!user.password_hash) {
+      if (pass.length < 6) { errEl.textContent='Please set a password of at least 6 characters.'; return; }
+      const verified = await verifyWithServer(email, pass);
+      if (!verified) { errEl.textContent='Invalid password. Use your Syncro system password.'; return; }
+      const newHash = await hashPwd(pass);
+      await sb.from('impl_users').update({ password_hash: newHash }).eq('id', user.id);
+      user.password_hash = newHash;
+    } else {
+      const hash = await hashPwd(pass);
+      if (hash !== user.password_hash) { errEl.textContent='Invalid email or password'; return; }
+    }
+    const teamData = user.team_code ? await loadTeamConfig(user.team_code) : null;
+    sess = buildSession(user, teamData);
+    localStorage.setItem('sf_sess', JSON.stringify(sess));
+    showApp();
+    loadImplConfig();
+    loadTasks();
+  } catch(e) { errEl.textContent='Connection error. Please try again.'; console.error(e); }
+  finally { btn.disabled=false; btn.textContent='Sign In'; }
+}
+
+async function verifyWithServer(email, password) {
+  const urls = ['/api/impl/auth/login', 'http://localhost:3001/api/impl/auth/login'];
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({ email, password }) });
+      if (r.ok) { const d = await r.json(); return !!d.verified; }
+      if (r.status === 401) return false;
+    } catch(_) {}
+  }
+  return true;
+}
+
+// ── Load companies + statuses from server, fall back to Supabase cache ────────
+async function loadImplConfig() {
+  const urls = ['/api/impl/config', 'http://localhost:3001/api/impl/config'];
+  for (const url of urls) {
+    try {
+      const r = await fetch(url, { signal: AbortSignal.timeout(6000) });
+      if (!r.ok) continue;
+      const d = await r.json();
+      if (d.companies?.length) {
+        sess.companies = d.companies;
+        if (d.statuses?.length) sess.statuses = d.statuses;
+        localStorage.setItem('sf_sess', JSON.stringify(sess));
+        return true;
+      }
+    } catch(_) {}
+  }
+  // Server unreachable (GitHub Pages) — load from Supabase impl_companies table
+  if (sess?.teamCode) {
+    const { data: cos, error: cosErr } = await sb.from('impl_companies').select('syncro_id,name,color').eq('team_code', sess.teamCode);
+    showToast('DB: ' + (cosErr ? cosErr.message : (cos?.length + ' cos, tc=' + sess.teamCode)));
+    if (!cosErr && cos?.length) {
+      sess.companies = cos.map(c => ({ id: c.syncro_id, name: c.name, color: c.color }));
+      localStorage.setItem('sf_sess', JSON.stringify(sess));
+      return true;
+    }
+  }
+  return false;
+}
+
+// ── Load teams into register dropdown ────────────────────────────────────────
+async function loadRegisterTeams() {
+  const sel = document.getElementById('r-team');
+  sel.innerHTML = '<option value="">Loading teams…</option>';
+  try {
+    const { data: teams } = await sb.from('impl_teams').select('team_code,team_name').order('team_name');
+    if (!teams?.length) { sel.innerHTML = '<option value="">No teams available</option>'; return; }
+    sel.innerHTML = teams.map(t=>`<option value="${t.team_code}">${t.team_name}</option>`).join('');
+    if (teams.length === 1) document.getElementById('r-team-grp').style.display='none';
+  } catch(e) { sel.innerHTML = '<option value="">Could not load teams</option>'; }
+}
+
+// ── Register ──────────────────────────────────────────────────────────────────
+async function doRegister() {
+  const name  = document.getElementById('r-name').value.trim();
+  const email = document.getElementById('r-email').value.trim().toLowerCase();
+  const pass  = document.getElementById('r-pass').value;
+  const code  = document.getElementById('r-team').value;
+  const errEl = document.getElementById('r-err');
+  const btn   = document.getElementById('r-btn');
+  errEl.textContent='';
+  if (!name)           { errEl.textContent='Full name is required'; return; }
+  if (!email)          { errEl.textContent='Email is required'; return; }
+  if (pass.length < 6) { errEl.textContent='Password must be at least 6 characters'; return; }
+  if (!code)           { errEl.textContent='Please select a team'; return; }
+  btn.disabled=true; btn.textContent='Creating account…';
+  try {
+    const { data: team } = await sb.from('impl_teams').select('*').eq('team_code', code).single();
+    if (!team) { errEl.textContent='Selected team not found. Please try again.'; return; }
+    const { data: existing } = await sb.from('impl_users').select('id').eq('email', email).maybeSingle();
+    if (existing) { errEl.textContent='An account with this email already exists. Please sign in.'; return; }
+    const hash = await hashPwd(pass);
+    const { error } = await sb.from('impl_users').insert({
+      full_name: name, email, password_hash: hash,
+      team_code: code, is_approved: false, mobile_registered: true
+    });
+    if (error) { errEl.textContent='Registration failed. Please try again.'; return; }
+    sess = { name, email, teamCode: code, teamName: team.team_name, isApproved: false,
+             companies: parseJSON(team.companies_cache), statuses: parseJSON(team.statuses_cache) };
+    localStorage.setItem('sf_sess', JSON.stringify(sess));
+    showScreen('s-pending');
+    showToast('Account created — awaiting approval');
+  } catch(e) { errEl.textContent='Connection error. Please try again.'; console.error(e); }
+  finally { btn.disabled=false; btn.textContent='Create Account'; }
+}
+
+async function checkApproval() {
+  if (!sess?.email) return;
+  try {
+    const { data } = await sb.from('impl_users').select('*').eq('email', sess.email).single();
+    if (data?.is_approved) {
+      const teamData = await loadTeamConfig(data.team_code);
+      sess = buildSession(data, teamData);
+      localStorage.setItem('sf_sess', JSON.stringify(sess));
+      showApp(); loadTasks();
+    } else {
+      showToast('Not yet approved. Please contact your admin.');
+    }
+  } catch { showToast('Connection error'); }
+}
+
+function doLogout() {
+  clearInterval(timer);
+  sess = null;
+  localStorage.removeItem('sf_sess');
+  showScreen('s-login');
+  document.getElementById('l-email').value='';
+  document.getElementById('l-pass').value='';
+  switchTab('tasks');
+}
+
+// ── Profile actions ───────────────────────────────────────────────────────────
+async function saveTFSCredentials() {
+  const tfsPass = document.getElementById('tfs-pass').value.trim();
+  const btn = document.getElementById('tfs-save-btn');
+  document.getElementById('tfs-err').textContent='';
+  if (!tfsPass) { document.getElementById('tfs-err').textContent='Please enter your PAT'; return; }
+  btn.disabled=true; btn.textContent='Saving…';
+  try {
+    const { data: user } = await sb.from('impl_users').select('id').eq('email', sess.email).single();
+    if (!user) throw new Error('User not found');
+    await sb.from('impl_users').update({ tfs_password: tfsPass }).eq('id', user.id);
+    sess.tfsPassword = tfsPass;
+    localStorage.setItem('sf_sess', JSON.stringify(sess));
+    showToast('PAT saved — TFS sync active from next cycle (~5 min)');
+  } catch(e) { document.getElementById('tfs-err').textContent='Failed to save. Try again.'; }
+  finally { btn.disabled=false; btn.textContent='Save PAT'; }
+}
+
+async function changePassword() {
+  const oldPass = document.getElementById('cp-old').value;
+  const newPass = document.getElementById('cp-new').value;
+  const errEl   = document.getElementById('cp-err');
+  const btn     = document.getElementById('cp-btn');
+  errEl.textContent='';
+  if (!oldPass)          { errEl.textContent='Enter your current password'; return; }
+  if (newPass.length<6)  { errEl.textContent='New password must be at least 6 characters'; return; }
+  btn.disabled=true; btn.textContent='Changing…';
+  try {
+    const oldHash = await hashPwd(oldPass);
+    const newHash = await hashPwd(newPass);
+    const { data: user } = await sb.from('impl_users').select('id,password_hash').eq('email', sess.email).single();
+    if (!user || user.password_hash !== oldHash) { errEl.textContent='Current password is incorrect'; return; }
+    await sb.from('impl_users').update({ password_hash: newHash }).eq('id', user.id);
+    document.getElementById('cp-old').value='';
+    document.getElementById('cp-new').value='';
+    showToast('Password changed successfully');
+  } catch(e) { errEl.textContent='Failed to change password. Try again.'; }
+  finally { btn.disabled=false; btn.textContent='Change Password'; }
+}
+
+// ── Tasks ─────────────────────────────────────────────────────────────────────
+async function loadTasks() {
+  try {
+    let q = sb.from('impl_tasks').select('*').order('created_at', { ascending: false });
+    if (sess.teamCode) q = q.eq('team_code', sess.teamCode);
+    else               q = q.eq('created_by', sess.name);
+    const { data, error } = await q;
+    if (error) throw error;
+    tasks = data || [];
+    renderTasks();
+  } catch(e) { showToast('Could not load tasks'); console.error(e); }
+}
+
+function setFilter(f, el) {
+  filter=f;
+  document.querySelectorAll('.ftab').forEach(t=>t.classList.remove('active'));
+  el.classList.add('active');
+  renderTasks();
+}
+
+function renderTasks() {
+  const list = document.getElementById('task-list');
+  const shown = filter==='all' ? tasks : tasks.filter(t=>t.current_status===filter);
+  if (!shown.length) {
+    list.innerHTML=`<div class="empty"><div class="empty-ico">📋</div><div class="empty-txt">${filter==='all'?'No tasks yet.<br>Tap <b>+</b> to add one.':'No <b>'+filter+'</b> tasks.'}</div></div>`;
+    return;
+  }
+  list.innerHTML = shown.map((t,i)=>{
+    const sc=STATUS_STYLE[t.current_status]||STATUS_STYLE['Pending'];
+    const date=t.target_date?new Date(t.target_date+'T00:00:00').toLocaleDateString('en-GB',{day:'numeric',month:'short'}):'';
+    const co=(sess.companies||[]).find(c=>c.id===t.company_id);
+    const coName=co?co.name:(t.company_id||'');
+    return `<div class="task-card" style="animation-delay:${i*0.04}s" onclick="openStatus('${t.id}')">
+      <div class="card-top">
+        <div class="card-title">${esc(t.title)}</div>
+        <div class="badge" style="background:${sc.bg};color:${sc.color};border:1.5px solid ${sc.border}">${t.current_status}</div>
+      </div>
+      <div class="card-meta">
+        <div class="sync-dot ${t.synced?'ok':''}"></div>
+        <span>${t.synced?'Synced':'Pending sync'}</span>
+        ${coName?`<div class="chip"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M3 9h6M3 14h6"/><path d="M15 9h3M15 13h3M15 17h3"/></svg>${esc(coName)}</div>`:''}
+        ${date?`<span class="chip-gray"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px"><rect x="3" y="4" width="18" height="18" rx="2"/><path d="M16 2v4M8 2v4M3 10h18"/></svg>${date}</span>`:''}
+        ${t.estimated_hours?`<span class="chip-gray"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="display:inline-block;vertical-align:middle;margin-right:3px"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>${t.estimated_hours}h</span>`:''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── Add task ──────────────────────────────────────────────────────────────────
+function fillCompanyDropdown() {
+  const sel = document.getElementById('t-company');
+  sel.innerHTML = '<option value="">— Select client —</option>';
+  (sess.companies || []).forEach(c => {
+    const o = document.createElement('option');
+    o.value = c.id; o.textContent = c.name; sel.appendChild(o);
+  });
+}
+
+async function openAdd() {
+  ['t-title','t-desc','t-hours'].forEach(id=>document.getElementById(id).value='');
+  document.getElementById('t-date').value='';
+  subRows=[]; document.getElementById('sub-rows').innerHTML='';
+  const sel = document.getElementById('t-company');
+  if (!sess.companies?.length) {
+    sel.innerHTML = '<option value="">Loading clients…</option>';
+    await loadImplConfig();
+  }
+  fillCompanyDropdown();
+  document.getElementById('add-modal').classList.remove('hidden');
+  setTimeout(()=>document.getElementById('t-title').focus(),320);
+}
+
+function addSubRow() {
+  const id='sr_'+Date.now();
+  subRows.push(id);
+  const div=document.createElement('div');
+  div.className='sub-row'; div.id=id;
+  div.innerHTML=`<textarea class="inp" rows="3" placeholder="Sub-task description (required)" id="${id}_t"></textarea>
+    <div class="sub-row-foot">
+      <input class="inp sub-hrs" type="number" placeholder="Est. hours" min="0" step="0.5" id="${id}_h"/>
+      <button class="sub-del" type="button" onclick="rmSubRow('${id}')">×</button>
+    </div>`;
+  document.getElementById('sub-rows').appendChild(div);
+  document.getElementById(id+'_t').focus();
+}
+
+function rmSubRow(id) {
+  subRows=subRows.filter(x=>x!==id);
+  document.getElementById(id)?.remove();
+}
+
+function toggleSubDone(id) {
+  const el=document.getElementById('sub_'+id); if(!el) return;
+  const nowDone=!el.classList.contains('done');
+  el.classList.toggle('done',nowDone);
+  el.querySelector('.sub-cb').textContent=nowDone?'✓':'';
+  const hInp=el.querySelector('.sub-hrs-inp'); if(hInp) hInp.style.display=nowDone?'block':'none';
+}
+
+async function saveTask() {
+  const title=document.getElementById('t-title').value.trim();
+  const company=document.getElementById('t-company').value || null;
+  const date=document.getElementById('t-date').value;
+  if (!title) { showToast('Title is required'); return; }
+  if (!date)  { showToast('Target date is required'); return; }
+  for (const rid of subRows) {
+    if (!document.getElementById(rid+'_t')?.value?.trim()) { showToast('Sub-task description is required'); return; }
+  }
+  const btn=document.getElementById('save-btn');
+  btn.disabled=true; btn.textContent='Saving…';
+  try {
+    const row = {
+      title, company_id: company,
+      description:document.getElementById('t-desc').value.trim(),
+      target_date:date,
+      estimated_hours:parseFloat(document.getElementById('t-hours').value)||0,
+      current_status:'Pending', created_by:sess.name, synced:false
+    };
+    if (sess.teamCode) row.team_code = sess.teamCode;
+    const {data: inserted, error}=await sb.from('impl_tasks').insert(row).select('id');
+    if (error) throw error;
+    const newTaskId = inserted?.[0]?.id;
+    for (const rid of subRows) {
+      const stitle = document.getElementById(rid+'_t')?.value?.trim();
+      if (!stitle) continue;
+      const shrs = parseFloat(document.getElementById(rid+'_h')?.value)||0;
+      const sr = { task_id: newTaskId, title: stitle, estimated_hours: shrs,
+                   created_by: sess.name, synced: false };
+      if (sess.teamCode) sr.team_code = sess.teamCode;
+      await sb.from('impl_subtasks').insert(sr);
+    }
+    closeModal('add-modal');
+    showToast('Task saved — syncs in ~5 min');
+    loadTasks();
+  } catch(e){ showToast('Save failed: ' + (e?.message || e?.code || JSON.stringify(e))); console.error(e); }
+  finally { btn.disabled=false; btn.textContent='Add Task'; }
+}
+
+// ── Status update ─────────────────────────────────────────────────────────────
+async function openStatus(id) {
+  const t=tasks.find(x=>x.id===id); if(!t) return;
+  selTaskId=id; selStatus=null; selSubtasks=[];
+  document.getElementById('status-task-name').textContent=t.title;
+  ['h-hours','h-note'].forEach(i=>document.getElementById(i).value='');
+  document.getElementById('h-date').value=new Date().toISOString().split('T')[0];
+  const dBtn=document.getElementById('delete-btn');
+  if (dBtn) { dBtn.disabled=false; dBtn.textContent='Delete Task'; dBtn.style.background=''; dBtn.style.color=''; dBtn.dataset.confirm='0'; clearTimeout(deleteConfirmTimer); }
+
+  const statuses=visibleStatuses();
+  document.getElementById('status-grid').innerHTML=statuses.map(s=>{
+    const sc=STATUS_STYLE[s.name]||STATUS_STYLE['Pending'];
+    const cur=t.current_status===s.name;
+    const sid='sopt_'+s.name.replace(/\s/g,'_');
+    return `<div class="s-opt ${cur?'cur':''}" id="${sid}"
+      style="${cur?`background:${sc.bg};color:${sc.color};border-color:${sc.border}`:''}"
+      onclick="pickStatus('${esc(s.name)}')">${esc(s.name)}</div>`;
+  }).join('');
+
+  try {
+    const { data: subs } = await sb.from('impl_subtasks').select('*').eq('task_id', id).order('created_at');
+    selSubtasks = subs || [];
+  } catch(_) { selSubtasks=[]; }
+  const wrap = document.getElementById('sub-checks-wrap');
+  if (selSubtasks.length) {
+    document.getElementById('sub-checks').innerHTML = selSubtasks.map(s=>`
+      <div class="sub-check${s.is_done?' done':''}" id="sub_${s.id}">
+        <div class="sub-check-hdr" onclick="toggleSubDone('${s.id}')">
+          <div class="sub-cb">${s.is_done?'✓':''}</div>
+          <div class="sub-check-title">${esc(s.title)}</div>
+          <div class="sub-est">${s.estimated_hours?s.estimated_hours+'h est':''}</div>
+        </div>
+        <div class="sub-hrs-inp" style="${s.is_done?'':'display:none'}">
+          <input class="inp" type="number" placeholder="Completed hours" min="0" step="0.5"
+            id="scomp_${s.id}" value="${s.completed_hours||''}" onclick="event.stopPropagation()" style="margin-top:0"/>
+        </div>
+      </div>`).join('');
+    wrap.style.display='block';
+  } else { wrap.style.display='none'; }
+
+  document.getElementById('status-modal').classList.remove('hidden');
+}
+
+function pickStatus(name) {
+  selStatus=name;
+  const statuses=visibleStatuses();
+  statuses.forEach(s=>{
+    const el=document.getElementById('sopt_'+s.name.replace(/\s/g,'_')); if(!el) return;
+    const sc=STATUS_STYLE[s.name]||STATUS_STYLE['Pending'];
+    const sel=s.name===name;
+    el.classList.toggle('cur',sel);
+    el.style.background=sel?sc.bg:''; el.style.color=sel?sc.color:''; el.style.borderColor=sel?sc.border:'';
+  });
+}
+
+async function applyStatus() {
+  if(!selTaskId) return;
+  const t=tasks.find(x=>x.id===selTaskId);
+  const newStatus=selStatus||t.current_status;
+  const hrs=parseFloat(document.getElementById('h-hours').value)||0;
+  const hDate=document.getElementById('h-date').value||new Date().toISOString().split('T')[0];
+  const hNote=document.getElementById('h-note').value.trim();
+  const btn=document.getElementById('apply-btn');
+  btn.disabled=true; btn.textContent='Saving…';
+  try {
+    if (newStatus!==t.current_status) {
+      await sb.from('impl_tasks').update({current_status:newStatus}).eq('id',selTaskId);
+      const su = { task_id:selTaskId, syncro_task_id:t.syncro_task_id,
+        new_status:newStatus, updated_by:sess.name, synced:false };
+      if (sess.teamCode) su.team_code = sess.teamCode;
+      await sb.from('impl_status_updates').insert(su);
+    }
+    if (hrs>0) {
+      const tl = { task_id:selTaskId, syncro_task_id:t.syncro_task_id,
+        hours_logged:hrs, log_date:hDate, note:hNote,
+        logged_by:sess.name, synced:false };
+      if (sess.teamCode) tl.team_code = sess.teamCode;
+      await sb.from('impl_time_logs').insert(tl);
+    }
+    let subsDone=0;
+    for (const s of selSubtasks) {
+      const el=document.getElementById('sub_'+s.id); if(!el) continue;
+      const isDone=el.classList.contains('done');
+      const compHrs=parseFloat(document.getElementById('scomp_'+s.id)?.value)||0;
+      if (isDone!==s.is_done || compHrs!==(s.completed_hours||0)) {
+        await sb.from('impl_subtasks').update({
+          is_done:isDone, completed_hours:isDone?compHrs:0, hours_synced:false
+        }).eq('id',s.id);
+        if(isDone) subsDone++;
+      }
+    }
+    closeModal('status-modal');
+    const parts=[];
+    if(newStatus!==t.current_status) parts.push('Status → '+newStatus);
+    if(hrs>0) parts.push(hrs+'h logged');
+    if(subsDone>0) parts.push(subsDone+' sub-task'+(subsDone>1?'s':'')+' done');
+    showToast((parts.join(' · ')||'No changes')+' ✓');
+    loadTasks();
+  } catch(e){ showToast('Failed to update. Check connection.'); console.error(e); }
+  finally { btn.disabled=false; btn.textContent='Update'; selTaskId=null; }
+}
+
+// ── Helpers ────────────────────────────────────────────────────────────────────
+async function loadTeamConfig(teamCode) {
+  const [{ data: team }, { data: cos }] = await Promise.all([
+    sb.from('impl_teams').select('*').eq('team_code', teamCode).single(),
+    sb.from('impl_companies').select('syncro_id,name,color').eq('team_code', teamCode)
+  ]);
+  return { team, companies: cos || [] };
+}
+function buildSession(user, teamData) {
+  const team = teamData?.team;
+  const companies = (teamData?.companies || []).map(c => ({ id: c.syncro_id, name: c.name, color: c.color }));
+  return {
+    userId: user.id, name: user.full_name, email: user.email,
+    teamCode: user.team_code, teamName: team?.team_name || user.team_code,
+    syncroUserId: user.syncro_user_id, isApproved: user.is_approved,
+    tfsUsername: user.tfs_username || '', tfsPassword: user.tfs_password || '',
+    companies, statuses: parseJSON(team?.statuses_cache)
+  };
+}
+function parseJSON(val) {
+  if (!val) return [];
+  if (Array.isArray(val)) return val;
+  try { return JSON.parse(val); } catch { return []; }
+}
+function closeModal(id) { document.getElementById(id).classList.add('hidden'); selTaskId=null; }
+function bgClose(id,e) { if(e.target.id===id) closeModal(id); }
+function esc(s){ return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+let toastT;
+function showToast(msg){
+  document.querySelector('.toast')?.remove(); clearTimeout(toastT);
+  const el=document.createElement('div'); el.className='toast'; el.textContent=msg;
+  document.body.appendChild(el); toastT=setTimeout(()=>el.remove(),3000);
+}
+
+// ── Delete task ───────────────────────────────────────────────────────────────
+function tapDelete() {
+  const btn=document.getElementById('delete-btn');
+  if (btn.dataset.confirm==='1') {
+    clearTimeout(deleteConfirmTimer);
+    btn.dataset.confirm='0'; btn.textContent='Delete Task';
+    btn.style.background=''; btn.style.color='';
+    deleteTask(selTaskId);
+  } else {
+    btn.dataset.confirm='1'; btn.textContent='Tap again to confirm delete';
+    btn.style.background='#DC2626'; btn.style.color='#fff';
+    deleteConfirmTimer=setTimeout(()=>{
+      btn.dataset.confirm='0'; btn.textContent='Delete Task';
+      btn.style.background=''; btn.style.color='';
+    }, 3000);
+  }
+}
+
+async function deleteTask(id) {
+  if (!id) return;
+  const t=tasks.find(x=>x.id===id);
+  const btn=document.getElementById('delete-btn');
+  if (btn) { btn.disabled=true; btn.textContent='Deleting…'; }
+  try {
+    await sb.from('impl_subtasks').delete().eq('task_id', id);
+    await sb.from('impl_status_updates').delete().eq('task_id', id);
+    await sb.from('impl_time_logs').delete().eq('task_id', id);
+    await sb.from('impl_tasks').delete().eq('id', id);
+    closeModal('status-modal');
+    showToast(t?.synced ? 'Removed from mobile (Syncro record kept)' : 'Task deleted');
+    loadTasks();
+  } catch(e) {
+    showToast('Delete failed. Try again.');
+    if (btn) { btn.disabled=false; btn.textContent='Delete Task'; btn.style.background=''; btn.style.color=''; btn.dataset.confirm='0'; }
+  }
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  const total=tasks.length;
+  const done=tasks.filter(t=>t.current_status==='Completed'||t.current_status==='Complete').length;
+  const active=tasks.filter(t=>t.current_status==='In Progress').length;
+  const statsEl=document.getElementById('dash-stats');
+  if (statsEl) {
+    const nums=statsEl.querySelectorAll('.dash-stat-num');
+    if (nums[0]) nums[0].textContent=total||'0';
+    if (nums[1]) nums[1].textContent=done||'0';
+    if (nums[2]) nums[2].textContent=active||'0';
+  }
+
+  const compMap={};
+  for (const t of tasks) {
+    const co=(sess.companies||[]).find(c=>c.id===t.company_id);
+    const key=co?co.name:(t.company_id||'Unknown');
+    if (!compMap[key]) compMap[key]={total:0,done:0};
+    compMap[key].total++;
+    if (t.current_status==='Completed'||t.current_status==='Complete') compMap[key].done++;
+  }
+  const compEl=document.getElementById('dash-companies');
+  if (!Object.keys(compMap).length) {
+    compEl.innerHTML='<div class="dash-card" style="color:var(--tx2);text-align:center;font-size:14px;padding:24px">No tasks yet</div>';
+  } else {
+    const maxT=Math.max(1,...Object.values(compMap).map(v=>v.total));
+    compEl.innerHTML='<div class="dash-card"><div class="dash-card-title">Task Distribution</div>'+
+      Object.entries(compMap).sort((a,b)=>b[1].total-a[1].total).map(([name,v])=>
+        `<div class="dash-co-row">
+          <span class="dash-co-name">${esc(name)}</span>
+          <span class="dash-co-count">${v.done}/${v.total} done</span>
+        </div>
+        <div class="dash-bar-wrap" style="margin-bottom:14px">
+          <div class="dash-bar" style="width:${Math.round(v.total/maxT*100)}%"></div>
+        </div>`
+      ).join('')+'</div>';
+  }
+
+  const hoursEl=document.getElementById('dash-hours');
+  hoursEl.innerHTML='<div class="dash-card"><div class="loading"><div class="spinner"></div></div></div>';
+  try {
+    const days=[];
+    for (let i=6;i>=0;i--) { const d=new Date(); d.setDate(d.getDate()-i); days.push(d.toISOString().split('T')[0]); }
+    let q=sb.from('impl_time_logs').select('log_date,hours_logged').gte('log_date',days[0]);
+    if (sess.teamCode) q=q.eq('team_code',sess.teamCode);
+    const {data:logs}=await q;
+    const dayMap={};
+    days.forEach(d=>{ dayMap[d]=0; });
+    for (const l of (logs||[])) { if (dayMap[l.log_date]!==undefined) dayMap[l.log_date]+=(l.hours_logged||0); }
+    const maxH=Math.max(1,...Object.values(dayMap));
+    const DAYS=['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    hoursEl.innerHTML='<div class="dash-card"><div class="dash-card-title">Hours Logged</div>'+
+      Object.entries(dayMap).map(([d,h])=>{
+        const dt=new Date(d+'T00:00:00');
+        const dayLbl=DAYS[dt.getDay()];
+        const dateLbl=(dt.getMonth()+1)+'/'+(dt.getDate());
+        const barW=h?Math.max(5,Math.round(h/maxH*100)):0;
+        return `<div class="dash-day-row">
+          <div style="width:34px;flex-shrink:0;text-align:center">
+            <div class="dash-day-lbl">${dayLbl}</div>
+            <div class="dash-day-date">${dateLbl}</div>
+          </div>
+          <div class="dash-day-bar-wrap">
+            <div class="dash-bar-wrap">
+              <div class="dash-bar" style="width:${barW}%;${!h?'background:#E8EAFF':''}"></div>
+            </div>
+          </div>
+          <span class="dash-day-hrs">${h?h+'h':'—'}</span>
+        </div>`;
+      }).join('')+'</div>';
+  } catch(e) { hoursEl.innerHTML='<div class="dash-card" style="color:var(--red);font-size:14px;padding:20px">Could not load hours</div>'; }
+}
+</script>
+</body>
+</html>
